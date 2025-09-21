@@ -14,6 +14,11 @@ export CTG_TOMUSER="ctg-tomcat";         ## Check and Make sure that this is the
 export CTG_ASSET="las5";            ## Check and make sure that the Server name is the one that the tomcat service is hosted on
 export CTG_SERVICENAME="tomcat3";           ## Check and make sure that the Service name is correct for this application
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> bc982a5 ( interactive rebase in progress; onto 2cce666)
 
 
 
@@ -48,3 +53,7 @@ cp /etc/systemd/system/tomcat* "/usr/data/pbadata/backups/las5/${CTG_TODAY}/";
 
 
 
+<<<<<<< HEAD
+=======
+>>>>>>> c05d5e2 (Created a READ.md, Added Backups cmds to Installation Script.)
+>>>>>>> bc982a5 ( interactive rebase in progress; onto 2cce666)
