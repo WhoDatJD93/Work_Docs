@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+
+trap 'echo "Error occured at the line $LINENO: Command failed."; exit 1' ERR
+
 
 
 ##### Environmental Variables for MDV installation #####
