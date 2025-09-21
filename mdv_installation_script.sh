@@ -54,6 +54,9 @@ cp /etc/systemd/system/tomcat* "/usr/data/pbadata/backups/las5/${CTG_TODAY}/";
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c05d5e2 (Created a READ.md, Added Backups cmds to Installation Script.)
 >>>>>>> bc982a5 ( interactive rebase in progress; onto 2cce666)
+=======
+>>>>>>> dfae827 (rebaseline)
