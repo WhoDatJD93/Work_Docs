@@ -165,10 +165,88 @@ perform_backups() {
   fi
 }
 
+verify_runtime_prereqs() {
+  log "Verifying JRE ≥17…"
+  if command -v java >/dev/null 2>&1; then
+    local jv
+    jv="$(java -version 2>&1 | awk -F\" '/version/ {print $2}' | cut -d. -f1)"
+    [[ "${jv:-0}" -ge 17 ]] || die "Java runtime <17 detected. Found: ${jv:-unknown}"
+    log "Java OK (major ${jv})"
+  else
+    die "java not found in PATH. Install JRE/JDK 17+."
+  fi
+
+  log "Verifying Python 3.9 availability…"
+  # Prefer explicit python3.9 to avoid system 'python' surprises
+  if command -v python3.9 >/dev/null 2>&1; then
+    log "python3.9 found at: $(command -v python3.9)"
+  else
+    die "python3.9 not found. Install it (e.g., yum/dnf install python39)."
+  fi
+
+  # Sanity-check pip for 3.9 (optional but nice)
+  if command -v pip3.9 >/dev/null 2>&1; then
+    log "pip3.9 found."
+  else
+    log "pip3.9 not found; will use venv’s pip."
+  fi
+}
+
+setup_utils_env() {
+  # Paths
+  local mdv_root="${CTG_RTDATA}/mdv/5"
+  local venv_dir="${mdv_root}/mdv_utils_env"
+  local req_file="${CTG_DEPLOY}/UTILS/requirements_UTILS.txt"
+  local pip_log="${CTG_DEPLOY}/mdv_utils_env.log"
+
+  log "Preparing UTILs directories at ${mdv_root}…"
+  sudo mkdir -p "${mdv_root}"
+  sudo chown -R "${CTG_TOMUSER}:${CTG_TOMUSER}" "${CTG_RTDATA}/mdv"
+  sudo chmod -R o-rwx "${CTG_RTDATA}/mdv"
+
+  [[ -f "${req_file}" ]] || die "Requirements file missing: ${req_file}"
+
+  log "Creating Python 3.9 virtualenv for UTILs at ${venv_dir}…"
+  # Use the explicit interpreter to guarantee 3.9
+  python3.9 -m venv "${venv_dir}"
+
+  # Upgrade pip inside the venv (not system-wide)
+  log "Upgrading pip inside venv…"
+  "${venv_dir}/bin/python" -m pip install --upgrade pip wheel setuptools
+
+  log "Installing UTILs requirements (logging to ${pip_log})…"
+  "${venv_dir}/bin/pip" install --log-file="${pip_log}" -r "${req_file}"
+
+  log "UTILs venv ready at ${venv_dir}"
+}
+
+test_utils_env() {
+  local venv_dir="${CTG_RTDATA}/mdv/5/mdv_utils_env"
+
+  [[ -x "${venv_dir}/bin/python" ]] || die "UTILs venv not found: ${venv_dir}"
+
+  log "Testing Python version inside venv…"
+  "${venv_dir}/bin/python" --version
+
+  log "Import test: netCDF4 (as per requirements)…"
+  "${venv_dir}/bin/python" - <<'PY'
+import sys
+try:
+    import netCDF4 as nc
+    print("netCDF4 OK:", nc.__version__)
+except Exception as e:
+    print("netCDF4 import FAILED:", e, file=sys.stderr)
+    sys.exit(1)
+PY
+
+  log "UTILs venv tests passed."
+}
+
 main() {
   log "Starting MDV install pre-checks…"
   ensure_tools
   confirm_env
+  verify_runtime_prereqs         # <— NEW
   check_disk_usage "$DISK_PATH" "$MAX_USE_PCT"
   pause_if_others_logged_in
 
@@ -181,9 +259,17 @@ main() {
   log "Performing backups…"
   perform_backups
 
-  log "Pre-checks and backups complete. Ready for deployment steps."
-  # TODO: add your deployment steps here (unpack artifacts, update configs, restart service, health checks, etc.)
+  log "Setting up UTILs Python env…"
+  setup_utils_env                # <— NEW
+  test_utils_env                 # <— NEW
+
+  log "Pre-checks, backups, and UTILs env complete. Proceed to artifact unpack/config…"
+  # unpack_artifacts
+  # apply_config_overlays
+  # set_permissions
+  # restart_and_healthcheck
 }
+
 
 main "$@"
 
