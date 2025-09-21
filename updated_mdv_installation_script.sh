@@ -242,6 +242,9 @@ PY
   log "UTILs venv tests passed."
 }
 
+
+
+
 main() {
   log "Starting MDV install pre-checks…"
   ensure_tools
@@ -269,6 +272,7 @@ main() {
   # set_permissions
   # restart_and_healthcheck
 }
+
 
 
 main "$@"
