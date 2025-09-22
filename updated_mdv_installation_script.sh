@@ -152,6 +152,10 @@ perform_backups() {
   else
     log "MDV4 config dir not found (${mdv4_cfg_dir}); skipping."
   fi
+### FIX TO MAKE DIE!! On ERROR ###
+### CHECK DIRECTORY FOR MDV4 ###
+
+
 
   # Backup systemd unit files
   if compgen -G "/etc/systemd/system/${CTG_SERVICENAME}*" > /dev/null; then
@@ -164,6 +168,9 @@ perform_backups() {
     fi
   fi
 }
+
+### FIX THE BACKUP OF SYSTEMD FILES ###
+
 
 verify_runtime_prereqs() {
   log "Verifying JRE ≥17…"
@@ -190,7 +197,10 @@ verify_runtime_prereqs() {
   else
     log "pip3.9 not found; will use venv’s pip."
   fi
+
 }
+
+### UPDATE PYTHON3.9 TO PYTHON3 SAME FOR PIP ###
 
 setup_utils_env() {
   # Paths
@@ -286,6 +296,8 @@ remove_old_mdv4() {
   fi
 }
 
+### Update Paths... MDV instead of MDV5 ###
+
 deploy_mdv5_webapp() {
   local src="${CTG_DEPLOY}/5.2.0"
   local dst="${CTG_RTTCT}/webapps/mdv5"
@@ -304,6 +316,10 @@ deploy_mdv5_webapp() {
 
   log "MDV 5.2.0 webapp deployed."
 }
+
+
+### Watch for legacy UTILs.war ###
+
 
 deploy_utils_wars() {
   local src_glob="${CTG_DEPLOY}/UTILS/"*.war
@@ -357,90 +373,6 @@ deploy_harvester_files() {
 }
 
 
-  # ---------- MDV 5.2.0 DEPLOYMENT ----------
-
-remove_old_mdv4() {
-  local mdv4_dir="${CTG_RTTCT}/webapps/mdv4"
-
-  log "Removing legacy MDV4 webapp (if present): ${mdv4_dir}"
-  if [[ -d "${mdv4_dir}" ]]; then
-    # Safety: ensure we are not crossing filesystems accidentally
-    sudo rm -rf --one-file-system -- "${mdv4_dir}"
-    log "MDV4 removed."
-  else
-    log "MDV4 directory not found; nothing to remove."
-  fi
-}
-
-deploy_mdv5_webapp() {
-  local src="${CTG_DEPLOY}/5.2.0"
-  local dst="${CTG_RTTCT}/webapps/mdv5"
-
-  [[ -d "${src}" ]] || die "MDV 5.2.0 source not found: ${src}"
-
-  log "Staging MDV 5.2.0 webapp -> ${dst}"
-  # Create target dir and sync contents idempotently
-  sudo mkdir -p -- "${dst}"
-  # rsync preserves permissions/links and supports re-run cleanups with --delete
-  rsync -aH --delete -- "${src}/" "${dst}/"
-
-  # Lock down ownership/permissions
-  sudo chown -R "${CTG_TOMUSER}:${CTG_TOMUSER}" "${dst}"
-  sudo chmod -R o-rwx "${dst}"
-
-  log "MDV 5.2.0 webapp deployed."
-}
-
-deploy_utils_wars() {
-  local src_glob="${CTG_DEPLOY}/UTILS/"*.war
-  local dst="${CTG_RTTCT}/webapps"
-
-  log "Deploying UTILs WARs from ${CTG_DEPLOY}/UTILS -> ${dst}"
-
-  # If no matches, we don't want the literal pattern to copy
-  shopt -s nullglob
-  local wars=( ${src_glob} )
-  shopt -u nullglob
-
-  if (( ${#wars[@]} == 0 )); then
-    die "No UTILs WARs found in ${CTG_DEPLOY}/UTILS"
-  fi
-
-  sudo mkdir -p -- "${dst}"
-  for war in "${wars[@]}"; do
-    log "Copying $(basename "$war")"
-    sudo install -m 0640 -o "${CTG_TOMUSER}" -g "${CTG_TOMUSER}" -- "$war" "${dst}/"
-  done
-
-  # Tighten listing permissions on the directory if needed (owner/group readable)
-  sudo chmod o-rwx "${dst}"
-  log "UTILs WARs deployed."
-}
-
-deploy_harvester_files() {
-  local root="${CTG_RTDATA}/mdv/5"
-  local src_py="${CTG_DEPLOY}/parser"
-  local dir_src="${root}/capParser/src"
-  local dir_cfg="${root}/mdv_config"
-  local dir_dat="${root}/mdv_data"
-  local dir_log="${root}/logs/capParser"
-
-  [[ -d "${src_py}" ]] || die "Harvester source dir not found: ${src_py}"
-
-  log "Creating Harvester directories under ${root}"
-  sudo mkdir -p -- "${dir_src}" "${dir_cfg}" "${dir_dat}" "${dir_log}"
-
-  log "Syncing *.py -> ${dir_src} and *.json -> ${dir_cfg}"
-  # Use rsync with includes to avoid copying unwanted files
-  rsync -aH --delete --include="*.py" --exclude="*" "${src_py}/" "${dir_src}/"
-  rsync -aH --delete --include="*.json" --exclude="*" "${src_py}/" "${dir_cfg}/"
-
-  log "Setting ownership and permissions for Harvester tree"
-  sudo chown -R "${CTG_TOMUSER}:${CTG_TOMUSER}" "${root}"
-  sudo chmod -R o-rwx "${root}"
-
-  log "Harvester files deployed."
-}
 
  main() {
   log "Starting MDV install pre-checks…"
