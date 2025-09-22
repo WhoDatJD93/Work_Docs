@@ -357,41 +357,6 @@ deploy_harvester_files() {
 }
 
 
-main() {
-  log "Starting MDV install pre-checks…"
-  ensure_tools
-  confirm_env
-  verify_runtime_prereqs       
-   check_disk_usage "$DISK_PATH" "$MAX_USE_PCT"
-  pause_if_others_logged_in
-
-  log "Saving prior artifacts…"
-  save_prior_artifacts
-
-  log "Stopping Tomcat and verifying shutdown…"
-  stop_tomcat_and_verify
-
-  log "Performing backups…"
-  perform_backups
-
-  log "Setting up UTILs Python env…"
-  setup_utils_env                
-  test_utils_env                 
-
-  log "Harvester environment creation + testing + permission setup..."
-  setup_harvester_env
-
-  log "Deploy MDV 5.2.0..."
-  remove_old_mdv4
-  deploy_mdv5_webapp
-  deploy_utils_wars
-  deploy_harvester_files
-  
-  log "Pre-checks, backups, and UTILs env complete. Proceed to artifact unpack/config…"
-   
-  # set_permissions
-  # restart_and_healthcheck
-}
   # ---------- MDV 5.2.0 DEPLOYMENT ----------
 
 remove_old_mdv4() {
@@ -477,7 +442,41 @@ deploy_harvester_files() {
   log "Harvester files deployed."
 }
 
- 
+ main() {
+  log "Starting MDV install pre-checks…"
+  ensure_tools
+  confirm_env
+  verify_runtime_prereqs       
+   check_disk_usage "$DISK_PATH" "$MAX_USE_PCT"
+  pause_if_others_logged_in
+
+  log "Saving prior artifacts…"
+  save_prior_artifacts
+
+  log "Stopping Tomcat and verifying shutdown…"
+  stop_tomcat_and_verify
+
+  log "Performing backups…"
+  perform_backups
+
+  log "Setting up UTILs Python env…"
+  setup_utils_env                
+  test_utils_env                 
+
+  log "Harvester environment creation + testing + permission setup..."
+  setup_harvester_env
+
+  log "Deploy MDV 5.2.0..."
+  remove_old_mdv4
+  deploy_mdv5_webapp
+  deploy_utils_wars
+  deploy_harvester_files
+  
+  log "Pre-checks, backups, and UTILs env complete. Proceed to artifact unpack/config…"
+   
+  # set_permissions
+  # restart_and_healthcheck
+}
 
 
 
